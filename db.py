@@ -106,13 +106,14 @@ def get_quiz(topic):
         conn.close()
 
 def delete_quiz(topic):
-    """Deletes a quiz from the database."""
+    """Deletes a quiz and its attempt history from the database."""
     conn = get_db_connection()
     if not conn:
         return
     try:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM quiz_table WHERE topic = %s", (topic,))
+        cursor.execute("DELETE FROM attempts_table WHERE topic = %s", (topic,))
         conn.commit()
     except Exception as error:
         print(f"Failed to delete quiz: {error}")
