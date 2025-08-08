@@ -43,7 +43,6 @@ def migrate_database():
                 percentage REAL
             )
         """)
-        # Add created_at column if it doesn't exist (for existing tables)
         cursor.execute("""
             ALTER TABLE quiz_table 
             ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -128,9 +127,9 @@ def get_topics():
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT DISTINCT topic FROM quiz_table 
-            ORDER BY MIN(created_at) ASC
+            SELECT topic FROM quiz_table
             GROUP BY topic
+            ORDER BY MIN(created_at) ASC
         """)
         topics = cursor.fetchall()
         return [t[0] for t in topics]
