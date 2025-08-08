@@ -18,31 +18,36 @@ def migrate_database():
     if not conn:
         return
     try:
-        with conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS quiz_table (
-                    topic TEXT,
-                    question TEXT,
-                    option_a TEXT,
-                    option_b TEXT,
-                    option_c TEXT,
-                    option_d TEXT,
-                    correct_answer CHAR(1),
-                    difficulty TEXT DEFAULT 'Medium',
-                    explanation TEXT DEFAULT ''
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS attempts_table (
-                    id SERIAL PRIMARY KEY,
-                    date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    topic TEXT,
-                    score INTEGER,
-                    total_questions INTEGER,
-                    percentage REAL
-                )
-            """)
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS quiz_table (
+                topic TEXT,
+                question TEXT,
+                option_a TEXT,
+                option_b TEXT,
+                option_c TEXT,
+                option_d TEXT,
+                correct_answer CHAR(1),
+                difficulty TEXT DEFAULT 'Medium',
+                explanation TEXT DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS attempts_table (
+                id SERIAL PRIMARY KEY,
+                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                topic TEXT,
+                score INTEGER,
+                total_questions INTEGER,
+                percentage REAL
+            )
+        """)
+        # Add created_at column if it doesn't exist (for existing tables)
+        cursor.execute("""
+            ALTER TABLE quiz_table 
+            ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        """)
         conn.commit()
     except Exception as error:
         print(f"Error during schema migration: {error}")
@@ -57,14 +62,13 @@ def create_quiz(topic, quiz_questions, difficulty="Medium"):
     if not conn:
         return
     try:
-        with conn:
-            cursor = conn.cursor()
-            for q in quiz_questions:
-                explanation = q.get('explanation', '')
-                cursor.execute("""
-                    INSERT INTO quiz_table (topic, question, option_a, option_b, option_c, option_d, correct_answer, difficulty, explanation)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (topic, q['q'], q['A'], q['B'], q['C'], q['D'], q['correct'], difficulty, explanation))
+        cursor = conn.cursor()
+        for q in quiz_questions:
+            explanation = q.get('explanation', '')
+            cursor.execute("""
+                INSERT INTO quiz_table (topic, question, option_a, option_b, option_c, option_d, correct_answer, difficulty, explanation)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (topic, q['q'], q['A'], q['B'], q['C'], q['D'], q['correct'], difficulty, explanation))
         conn.commit()
     except Exception as error:
         print(f"Failed to save quiz: {error}")
@@ -108,9 +112,8 @@ def delete_quiz(topic):
     if not conn:
         return
     try:
-        with conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM quiz_table WHERE topic = %s", (topic,))
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM quiz_table WHERE topic = %s", (topic,))
         conn.commit()
     except Exception as error:
         print(f"Failed to delete quiz: {error}")
@@ -118,13 +121,17 @@ def delete_quiz(topic):
         conn.close()
 
 def get_topics():
-    """Retrieves all distinct quiz topics."""
+    """Retrieves all distinct quiz topics in order of creation."""
     conn = get_db_connection()
     if not conn:
         return []
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT DISTINCT topic FROM quiz_table")
+        cursor.execute("""
+            SELECT DISTINCT topic FROM quiz_table 
+            ORDER BY MIN(created_at) ASC
+            GROUP BY topic
+        """)
         topics = cursor.fetchall()
         return [t[0] for t in topics]
     except Exception as error:
@@ -139,12 +146,11 @@ def save_attempt(topic, score, total_questions, percentage):
     if not conn:
         return
     try:
-        with conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO attempts_table (topic, score, total_questions, percentage)
-                VALUES (%s, %s, %s, %s)
-            """, (topic, score, total_questions, percentage))
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO attempts_table (topic, score, total_questions, percentage)
+            VALUES (%s, %s, %s, %s)
+        """, (topic, score, total_questions, percentage))
         conn.commit()
     except Exception as error:
         print(f"Failed to save score history: {error}")
