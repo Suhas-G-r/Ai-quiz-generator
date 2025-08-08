@@ -66,7 +66,7 @@ def create_quiz(topic):
     # Generate structured JSON quiz data from AI
     generated_data = generate_quiz(topic_name, number_of_questions=total_questions, difficulty=difficulty_level)
     
-    # Save the generated quiz to sqlite database
+    # Save the generated quiz to PostgreSQL database
     db.create_quiz(topic_name, generated_data, difficulty_level)
     
     return redirect(url_for('quizzes'))
@@ -146,6 +146,11 @@ def dashboard():
         chart_labels=chart_labels,
         chart_data=chart_scores
     )
+
+@web_app.route('/google24dce62fcba54d85.html')
+def google_verification():
+    """Google Search Console verification endpoint."""
+    return 'google-site-verification: google24dce62fcba54d85.html'
 
 if __name__ == '__main__':
     web_app.run(host='0.0.0.0', port=5000, debug=True)
