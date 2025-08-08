@@ -1,0 +1,405 @@
+{% extends 'base.html' %}
+{% set back_url = url_for('quizzes') %}
+
+{% block content %}
+  <h1 class="my-4 text-center">
+      {{ topic }} Quiz Summary
+      {% if questions %}
+          {% set diff = questions[0]['difficulty']|lower %}
+          <span class="badge-difficulty difficulty-{{ diff }}">{{ questions[0]['difficulty'] }}</span>
+      {% endif %}
+  </h1>
+
+  <!-- Results Dashboard Card -->
+  <div class="results-dashboard mb-5">
+      <div class="results-score-circle">
+          <div class="score-number">{{ correct_count }}/{{ total_questions }}</div>
+          <div class="score-label">Correct Answers</div>
+      </div>
+      
+      <div class="results-stats-grid">
+          <div class="stat-card">
+              <span class="stat-title">Accuracy</span>
+              <span class="stat-value text-gradient">{{ percentage }}%</span>
+          </div>
+          <div class="stat-card">
+              <span class="stat-title">Topic</span>
+              <span class="stat-value topic-text" title="{{ topic }}">{{ topic }}</span>
+          </div>
+          <div class="stat-card">
+              <span class="stat-title">Status</span>
+              <span class="stat-value {% if percentage >= 50 %}status-pass{% else %}status-fail{% endif %}">
+                  {% if percentage >= 50 %}Passed 🎉{% else %}Failed 😕{% endif %}
+              </span>
+          </div>
+      </div>
+      
+      <div class="text-center mt-4 w-100">
+          <a href="{{ url_for('quizzes') }}" class="btn class-back-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                  <line x1="19" y1="12" x2="5" y2="12"></line>
+                  <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              <span>Back to Quizzes</span>
+          </a>
+      </div>
+  </div>
+
+  <h2 class="mt-4 mb-4 text-center review-title">Questions Review</h2>
+  
+  {% for question in questions %}
+    <div class="review-question-card mb-4">
+      <h5 class="review-question-title">
+          <span class="q-number">Q{{ loop.index }}.</span> {{ question.question }}
+      </h5>
+      {% set answer_key = 'question' + loop.index|string %}
+      {% set user_answer = answers.get(answer_key) %}
+      {% set is_correct = user_answer == question.correct_answer %}
+
+      {# Option A #}
+      {% set is_selected_a = user_answer == 'A' %}
+      {% set is_correct_a = question.correct_answer == 'A' %}
+      <div class="summary-option 
+          {% if is_correct_a %}
+              summary-correct
+          {% elif is_selected_a and not is_correct %}
+              summary-incorrect
+          {% endif %}">
+          <span class="option-icon">
+              {% if is_correct_a %}
+                  ✓
+              {% elif is_selected_a and not is_correct %}
+                  ✗
+              {% else %}
+                  A
+              {% endif %}
+          </span>
+          <span class="option-text">{{ question.option_a }}</span>
+          {% if is_selected_a %}
+              <span class="user-badge">Your Choice</span>
+          {% endif %}
+      </div>
+
+      {# Option B #}
+      {% set is_selected_b = user_answer == 'B' %}
+      {% set is_correct_b = question.correct_answer == 'B' %}
+      <div class="summary-option 
+          {% if is_correct_b %}
+              summary-correct
+          {% elif is_selected_b and not is_correct %}
+              summary-incorrect
+          {% endif %}">
+          <span class="option-icon">
+              {% if is_correct_b %}
+                  ✓
+              {% elif is_selected_b and not is_correct %}
+                  ✗
+              {% else %}
+                  B
+              {% endif %}
+          </span>
+          <span class="option-text">{{ question.option_b }}</span>
+          {% if is_selected_b %}
+              <span class="user-badge">Your Choice</span>
+          {% endif %}
+      </div>
+
+      {# Option C #}
+      {% set is_selected_c = user_answer == 'C' %}
+      {% set is_correct_c = question.correct_answer == 'C' %}
+      <div class="summary-option 
+          {% if is_correct_c %}
+              summary-correct
+          {% elif is_selected_c and not is_correct %}
+              summary-incorrect
+          {% endif %}">
+          <span class="option-icon">
+              {% if is_correct_c %}
+                  ✓
+              {% elif is_selected_c and not is_correct %}
+                  ✗
+              {% else %}
+                  C
+              {% endif %}
+          </span>
+          <span class="option-text">{{ question.option_c }}</span>
+          {% if is_selected_c %}
+              <span class="user-badge">Your Choice</span>
+          {% endif %}
+      </div>
+
+      {# Option D #}
+      {% set is_selected_d = user_answer == 'D' %}
+      {% set is_correct_d = question.correct_answer == 'D' %}
+      <div class="summary-option 
+          {% if is_correct_d %}
+              summary-correct
+          {% elif is_selected_d and not is_correct %}
+              summary-incorrect
+          {% endif %}">
+          <span class="option-icon">
+              {% if is_correct_d %}
+                  ✓
+              {% elif is_selected_d and not is_correct %}
+                  ✗
+              {% else %}
+                  D
+              {% endif %}
+          </span>
+          <span class="option-text">{{ question.option_d }}</span>
+          {% if is_selected_d %}
+              <span class="user-badge">Your Choice</span>
+          {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <style>
+      .results-dashboard {
+          background-color: var(--card-bg);
+          border: 1px solid var(--card-border);
+          border-radius: 24px;
+          padding: 40px 32px;
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          justify-content: space-around;
+          gap: 32px;
+          box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+      }
+      
+      .results-score-circle {
+          width: 140px;
+          height: 140px;
+          border-radius: 50%;
+          background: rgba(99, 102, 241, 0.05);
+          border: 3px solid #6366f1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+      }
+      
+      .score-number {
+          font-size: 2.25rem;
+          font-weight: 850;
+          color: #6366f1;
+          letter-spacing: -0.03em;
+          line-height: 1.1;
+      }
+      
+      .score-label {
+          font-size: 0.72rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--text-muted);
+          margin-top: 4px;
+          text-align: center;
+      }
+      
+      .results-stats-grid {
+          display: flex;
+          gap: 24px;
+          flex-grow: 1;
+          justify-content: center;
+          flex-wrap: wrap;
+      }
+      
+      .stat-card {
+          background-color: var(--form-bg);
+          border: 1.5px solid var(--card-border);
+          border-radius: 16px;
+          padding: 18px 24px;
+          min-width: 160px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.2s ease;
+      }
+      
+      .stat-card:hover {
+          transform: translateY(-2px);
+      }
+      
+      .stat-title {
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: var(--text-muted);
+          margin-bottom: 6px;
+      }
+      
+      .stat-value {
+          font-size: 1.35rem;
+          font-weight: 750;
+          color: var(--text-color);
+      }
+      
+      .text-gradient {
+          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+      }
+
+      .topic-text {
+          max-width: 160px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          text-align: center;
+      }
+
+      .status-pass {
+          color: #22c55e !important;
+      }
+
+      .status-fail {
+          color: #ef4444 !important;
+      }
+      
+      .class-back-btn {
+          background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+          border: none !important;
+          border-radius: 12px !important;
+          color: #ffffff !important;
+          font-size: 0.95rem !important;
+          font-weight: 600 !important;
+          padding: 12px 28px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3) !important;
+          transition: all 0.25s ease !important;
+          cursor: pointer !important;
+          text-decoration: none !important;
+      }
+      
+      .class-back-btn:hover {
+          background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45) !important;
+          transform: translateY(-2px) !important;
+          color: #ffffff !important;
+          text-decoration: none !important;
+      }
+
+      .review-title {
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          color: var(--text-color);
+      }
+
+      .review-question-card {
+          background-color: var(--card-bg);
+          border: 1px solid var(--card-border);
+          border-radius: 20px;
+          padding: 28px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
+      }
+
+      .review-question-title {
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: var(--text-color);
+          margin-bottom: 20px;
+          line-height: 1.5;
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+      }
+
+      .q-number {
+          color: #6366f1;
+      }
+
+      .summary-option {
+          border: 1.5px solid var(--card-border);
+          border-radius: 12px;
+          padding: 14px 18px;
+          margin-bottom: 12px;
+          background-color: var(--form-bg);
+          display: flex;
+          align-items: center;
+          position: relative;
+          transition: all 0.2s ease;
+          color: var(--text-color);
+      }
+      
+      .option-icon {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background-color: var(--card-border);
+          color: var(--text-color);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 0.9rem;
+          margin-right: 14px;
+          flex-shrink: 0;
+      }
+
+      .summary-correct {
+          border-color: #22c55e !important;
+          background-color: rgba(34, 197, 94, 0.08) !important;
+          color: #166534 !important;
+      }
+      [data-theme="dark"] .summary-correct {
+          color: #86efac !important;
+      }
+
+      .summary-correct .option-icon {
+          background-color: #22c55e !important;
+          color: #ffffff !important;
+      }
+
+      .summary-incorrect {
+          border-color: #ef4444 !important;
+          background-color: rgba(239, 68, 68, 0.08) !important;
+          color: #991b1b !important;
+      }
+      [data-theme="dark"] .summary-incorrect {
+          color: #fca5a5 !important;
+      }
+
+      .summary-incorrect .option-icon {
+          background-color: #ef4444 !important;
+          color: #ffffff !important;
+      }
+      
+      .user-badge {
+          font-size: 0.72rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          padding: 4px 8px;
+          border-radius: 6px;
+          margin-left: auto;
+          background-color: var(--card-border);
+          color: var(--text-color);
+          border: 1px solid var(--card-border);
+      }
+      
+      .summary-correct .user-badge {
+          background-color: rgba(34, 197, 94, 0.15);
+          color: #15803d;
+          border-color: rgba(34, 197, 94, 0.25);
+      }
+      [data-theme="dark"] .summary-correct .user-badge {
+          color: #86efac;
+      }
+
+      .summary-incorrect .user-badge {
+          background-color: rgba(239, 68, 68, 0.15);
+          color: #b91c1c;
+          border-color: rgba(239, 68, 68, 0.25);
+      }
+      [data-theme="dark"] .summary-incorrect .user-badge {
+          color: #fca5a5;
+      }
+  </style>
+{% endblock %}

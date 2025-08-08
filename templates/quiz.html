@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% set back_url = url_for('quizzes') %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="my-4 text-center">
+        {{ topic }} Quiz
+        {% if questions %}
+            {% set diff = questions[0]['difficulty']|lower %}
+            <span class="badge-difficulty difficulty-{{ diff }}">{{ questions[0]['difficulty'] }}</span>
+        {% endif %}
+    </h1>
+
+    {% if questions %}
+    <form method="post" action="{{ url_for('quiz', topic=topic) }}" class="border rounded-lg p-4 shadow-sm">
+        <div id="quiz-questions" class="mb-4">
+            {% for question in questions %}
+            <div class="quiz-question mb-4" id="question{{ loop.index }}" {% if loop.index != 1 %}style="display: none;"{% endif %}>
+                <h2 style="color: blue; text-align: center;">Q{{ loop.index }}/{{ questions|length }}</h2>
+                <h5 class="mb-3">{{ question['question'] }}</h5>
+                <div class="form-check mb-2">
+                    <input class="form-check-input visually-hidden" type="radio" name="question{{ loop.index }}" id="question{{ loop.index }}_a" value="A">
+                    <label class="form-check-label" for="question{{ loop.index }}_a" onclick="toggleCheck(this, 'A')">
+                        <span class="checkmark">☐</span> {{ question['option_a'] }}
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input visually-hidden" type="radio" name="question{{ loop.index }}" id="question{{ loop.index }}_b" value="B">
+                    <label class="form-check-label" for="question{{ loop.index }}_b" onclick="toggleCheck(this, 'B')">
+                        <span class="checkmark">☐</span> {{ question['option_b'] }}
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input visually-hidden" type="radio" name="question{{ loop.index }}" id="question{{ loop.index }}_c" value="C">
+                    <label class="form-check-label" for="question{{ loop.index }}_c" onclick="toggleCheck(this, 'C')">
+                        <span class="checkmark">☐</span> {{ question['option_c'] }}
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input visually-hidden" type="radio" name="question{{ loop.index }}" id="question{{ loop.index }}_d" value="D">
+                    <label class="form-check-label" for="question{{ loop.index }}_d" onclick="toggleCheck(this, 'D')">
+                        <span class="checkmark">☐</span> {{ question['option_d'] }}
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mb-4">
+            {% if questions|length > 1 %}
+                <button type="button" class="btn btn-warning mr-2 btn-lg" id="skipBtn" onclick="skipQuestion()">Skip 🔄</button>
+            {% endif %}
+            <button type="button" class="btn btn-primary btn-lg" id="prevBtn" onclick="showPrevQuestion()">Previous ⬅️</button>
+            <button type="button" class="btn btn-primary btn-lg" id="nextBtn" onclick="showNextQuestion()">Next ➡️</button>
+        </div>
+        <div style="display: flex; justify-content: center;">
+            <button type="submit" class="btn btn-success btn-lg" id="submitBtn">Submit 🚀</button>
+        </div>
+    </form>
+    {% else %}
+    <p>No quiz available. Please create one.</p>
+    <form method="post" action="{{ url_for('create_quiz', topic=topic) }}">
+        <button type="submit" class="btn btn-primary">Create Quiz</button>
+    </form>
+    {% endif %}
+</div>
+
+<script>
+    let currentQuestion = 1;
+    const totalQuestions = {{ questions|length }};
+
+    function skipQuestion() {
+        currentQuestion += 1;
+        if (currentQuestion <= totalQuestions) {
+            document.getElementById(`question${currentQuestion - 1}`).style.display = 'none';
+            document.getElementById(`question${currentQuestion}`).style.display = 'block';
+            updateButtons();
+        } else {
+            currentQuestion = totalQuestions;
+        }
+    }
+
+    function showPrevQuestion() {
+        document.getElementById(`question${currentQuestion}`).style.display = 'none';
+        currentQuestion -= 1;
+        document.getElementById(`question${currentQuestion}`).style.display = 'block';
+        updateButtons();
+    }
+
+    function showNextQuestion() {
+        document.getElementById(`question${currentQuestion}`).style.display = 'none';
+        currentQuestion += 1;
+        document.getElementById(`question${currentQuestion}`).style.display = 'block';
+        updateButtons();
+    }
+
+    function updateButtons() {
+        if (currentQuestion === 1) {
+            document.getElementById('prevBtn').style.display = 'none';
+        } else {
+            document.getElementById('prevBtn').style.display = 'inline-block';
+        }
+    
+        if (currentQuestion === totalQuestions) {
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('skipBtn').style.display = 'none';
+        } else {
+            document.getElementById('nextBtn').style.display = 'inline-block';
+            document.getElementById('skipBtn').style.display = 'inline-block';
+        }
+    }    
+
+    function toggleCheck(label, option) {
+        const input = label.previousElementSibling;
+        const questionDiv = label.closest('.quiz-question');
+        
+        // Find all checkmarks and inputs in this specific question
+        const allLabels = questionDiv.querySelectorAll('.form-check-label');
+        const allInputs = questionDiv.querySelectorAll('.form-check-input');
+        
+        // Reset all other options in this question visually and logically
+        allLabels.forEach(l => {
+            const check = l.querySelector('.checkmark');
+            if (check) check.textContent = '☐';
+            const fc = l.closest('.form-check');
+            if (fc) fc.classList.remove('active-option');
+        });
+        allInputs.forEach(i => {
+            i.checked = false;
+        });
+        
+        // Set the clicked option to checked
+        input.checked = true;
+        const checkmark = label.querySelector('.checkmark');
+        if (checkmark) checkmark.textContent = '☑️';
+        const fc = label.closest('.form-check');
+        if (fc) fc.classList.add('active-option');
+    }
+
+    updateButtons()
+</script>
+
+<style>
+    .checkmark {
+        margin-right: 8px;
+        font-size: 1.2rem;
+    }
+    .visually-hidden {
+        position: absolute;
+        left: -9999px;
+    }
+    .form-check {
+        border: 1.5px solid var(--card-border);
+        border-radius: 12px;
+        padding: 14px 18px !important;
+        margin-bottom: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: var(--form-bg);
+        display: flex;
+        align-items: center;
+    }
+    .form-check:hover {
+        border-color: #6366f1;
+        background-color: rgba(99, 102, 241, 0.02);
+    }
+    .active-option {
+        border-color: #6366f1 !important;
+        background-color: rgba(99, 102, 241, 0.08) !important;
+    }
+    .form-check-label {
+        width: 100%;
+        cursor: pointer;
+        margin-bottom: 0 !important;
+        display: flex;
+        align-items: center;
+        color: var(--text-color);
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
